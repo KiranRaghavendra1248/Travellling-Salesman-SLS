@@ -1,8 +1,8 @@
 # Makefile
 
 # Compiler and flags
-CXX = /usr/bin/gcc
-CXXFLAGS = -Wall -Wextra -std=c++11 -arch arm64
+CXX = g++
+CXXFLAGS = -Wall -Wextra -std=c++11
 
 # Source files
 SRCS = main.cpp utils.cpp

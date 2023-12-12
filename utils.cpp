@@ -2,7 +2,7 @@
 #include <limits> 
 #include <vector>
 #include <iomanip> 
-
+#include <functional>
 #include "utils.h" 
 
 using namespace std;
@@ -107,7 +107,6 @@ vector<int> kruskalMST(vector<vector<int>>& graph, vector<vector<int>>& edges, i
     dfs(startCity);
     return tspPath;
 }
-
 
 void geneticAlgorithm(vector<vector<int>>& graph, vector<vector<int>>& edges, int startCity, int numCities, int numEdges){
     vector<int> initialSolution;
