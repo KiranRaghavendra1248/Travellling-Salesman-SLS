@@ -6,6 +6,8 @@ using namespace std;
 #define INF numeric_limits<int>::max()
 
 // Utility function declarations
-void printGraph(const std::vector<std::vector<int>>& graph);
+void printGraph(vector<vector<int>>& graph);
+vector<int> kruskalMST(vector<vector<int>>& graph,  vector<vector<int>>& edges, int startCity, int numCities, int numEdges);
+void geneticAlgorithm(vector<vector<int>>& graph,  vector<vector<int>>& edges, int startCity, int numCities, int numEdges);
 
 #endif // UTILS_H
