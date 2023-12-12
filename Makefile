@@ -2,7 +2,7 @@
 
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -Wall -Wextra -std=c++11
+CXXFLAGS = -std=c++11 -w
 
 # Source files
 SRCS = main.cpp utils.cpp

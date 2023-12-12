@@ -1,13 +1,22 @@
 #include <iostream> 
 #include <limits> 
+#include <set>
 #include <vector>
 #include <iomanip> 
 #include <functional>
+#include <algorithm>
+#include <random>
 #include "utils.h" 
 
 using namespace std;
 
-// Utility classes
+// Utility classes and struct
+
+struct VectorComparator {
+    bool operator()(const vector<int>& a, const vector<int>& b) const {
+        return a < b; // Use lexicographical comparison for vectors
+    }
+};
 
 class DisjointSet {
 private:
@@ -108,13 +117,61 @@ vector<int> kruskalMST(vector<vector<int>>& graph, vector<vector<int>>& edges, i
     return tspPath;
 }
 
-void geneticAlgorithm(vector<vector<int>>& graph, vector<vector<int>>& edges, int startCity, int numCities, int numEdges){
-    vector<int> initialSolution;
-    initialSolution = kruskalMST(graph, edges, startCity, numCities, numEdges);
-    for (size_t i = 0; i < initialSolution.size(); ++i) {
-        cout << initialSolution[i] << " ";
+vector<int> generateRandomTour(int numCities){
+    vector<int> tour(numCities);
+    for (int i = 0; i < numCities; ++i) {
+        tour[i] = i;
     }
-    cout << endl;
+    // Use a random device as a seed for the random number generator
+    random_device rd;
+    // Use the random device to seed the random number generator
+    mt19937 gen(rd());
+    // Shuffle the vector to generate a random permutation
+    shuffle(tour.begin(), tour.end(), gen);
+    return tour;
+}
+
+vector<vector<int>> initializePopulation(int N, int numCities){
+    set<vector<int>, VectorComparator> generatedPopulationSet;
+    for (int i = 0; generatedPopulationSet.size() < N; ++i) {
+        vector<int> vec = generateRandomTour(numCities);
+        generatedPopulationSet.insert(vec);
+    }
+    // Generate vector from set
+    vector<vector<int>> generatedPopulation(generatedPopulationSet.begin(), generatedPopulationSet.end());
+    return generatedPopulation;
+}
+
+void geneticAlgorithm(vector<vector<int>>& graph, vector<vector<int>>& edges, int startCity, int numCities, int numEdges){
+    int populationSize;
+    vector<int> initialSolution;
+    vector<vector<int>> population, generatedRandomizedPopulation;
+
+    populationSize = 25;
+    // Generate inital solution using Krustal's MST algo
+    initialSolution = kruskalMST(graph, edges, startCity, numCities, numEdges);
+
+    // Initalize population
+    population.push_back(initialSolution);
+    generatedRandomizedPopulation = initializePopulation(populationSize-1,numCities);
+    population.insert(population.end(), generatedRandomizedPopulation.begin(), generatedRandomizedPopulation.end());
+
+    // Print generated populations
+    std::cout << "Populations:" << std::endl;
+    for (const auto& individual : population) {
+        for (int value : individual) {
+            std::cout << value << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    // Run generation loop:
+    //      In every generation 
+    //      loop for populationSize times: 
+    //          perform selection, mutation and crossover -> generate offspring
+    //      now we have 2*populationSize (half old and half new)
+    //      choose populationSize best individuals from population using tour distance as metric and repeat above loop
+    // Now find the best population amongnst current population
 }
 
 
