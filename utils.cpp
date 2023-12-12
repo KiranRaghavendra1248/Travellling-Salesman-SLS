@@ -11,7 +11,8 @@
 using namespace std;
 
 // Utility classes and struct
-
+double crossoverRate = 0.7; 
+double mutationRate = 0.1;
 struct VectorComparator {
     bool operator()(const vector<int>& a, const vector<int>& b) const {
         return a < b; // Use lexicographical comparison for vectors
@@ -164,6 +165,24 @@ void geneticAlgorithm(vector<vector<int>>& graph, vector<vector<int>>& edges, in
         }
         std::cout << std::endl;
     }
+    int generations = 100; 
+    for (int generation = 0; generation < generations; ++generation) {
+        vector<pair<int, int>> selectedParents = selection(population);
+        vector<vector<int>> offspring;
+        for (size_t i = 0; i < selectedParents.size(); ++i) {
+            pair<int, int> parents = selectedParents[i];
+            vector<int>& parent1 = population[parents.first];
+            vector<int>& parent2 = population[parents.second];
+            pair<vector<int>, vector<int>> child = Crossover(parent1, parent2, crossoverRate);
+            Mutation(child.first, mutationRate);
+            Mutation(child.second, mutationRate);
+            offspring.push_back(child.first);
+            offspring.push_back(child.second);
+        }
+
+        population.insert(population.end(), offspring.begin(), offspring.end());
+        population = select_best_individuals(population, populationSize);
+    }
 
     // Run generation loop:
     //      In every generation 
@@ -174,9 +193,97 @@ void geneticAlgorithm(vector<vector<int>>& graph, vector<vector<int>>& edges, in
     // Now find the best population amongnst current population
 }
 
+vector<pair<int, int>> selection(vector<vector<int>>& population) {
+    vector<pair<int, int>> selectedParents;
 
+    for (size_t i = 0; i < population.size(); ++i) {
+        int parent1 = selectParent(population);
+        int parent2 = selectParent(population);
+        selectedParents.push_back(make_pair(parent1, parent2));
+    }
 
+    return selectedParents;
+}
 
+int selectParent(vector<vector<int>>& population) {
+    int randomIndex = rand() % population.size();
+    return randomIndex;
+}
+
+void Mutation(vector<vector<int>>& offspring, double rate) {
+    int randMax = RAND_MAX + 1;
+    for (auto& tour : offspring) {
+        int randomNumber = rand();
+        double probability = static_cast<double>(randomNumber) / randMax;
+        if (probability < rate) {
+            ApplyMutation(tour);
+        }
+    }
+}
+
+void ApplyMutation(vector<int>& tour) {
+    int tourLength = tour.size();
+    pair<int, int> indices = RandomTwoDifferentIndices(tourLength);
+    swap(tour[indices.first], tour[indices.second]);
+}
+
+pair<int, int> RandomTwoDifferentIndices(int size) {
+    int index1 = rand() % size;
+    int index2;
+    do {
+        index2 = rand() % size;
+    } while (index2 == index1);
+
+    return make_pair(index1, index2);
+}
+
+pair<vector<int>, vector<int>> Crossover(vector<int>& parent1, vector<int>& parent2, double rate) {
+    pair<vector<int>, vector<int>> offspring;
+    if ((rand()) / RAND_MAX < rate) {
+        int crossoverPoint = rand() % (min(parent1.size(), parent2.size()) - 1) + 1;
+        offspring.first.insert(offspring.first.end(), parent1.begin(), parent1.begin() + crossoverPoint);
+        offspring.first.insert(offspring.first.end(), parent2.begin() + crossoverPoint, parent2.end());
+        offspring.second.insert(offspring.second.end(), parent2.begin(), parent2.begin() + crossoverPoint);
+        offspring.second.insert(offspring.second.end(), parent1.begin() + crossoverPoint, parent1.end());
+    } else {
+        offspring.second = parent2;
+    }
+
+    return offspring;
+}
+
+int CalculateTourDistance(vector<int>& tour,  vector<vector<int>>& TSP) {
+    int total_distance = 0;
+    for (size_t i = 0; i < tour.size() - 1; ++i) {
+        int current_city = tour[i];
+        int next_city = tour[i + 1];
+        int distance = TSP[current_city][next_city];
+        total_distance += distance;
+    }
+    
+    int last_city = tour.back();
+    int first_city = tour.front();
+    int distance_to_start = TSP[last_city][first_city];
+    total_distance += distance_to_start;
+    
+    return total_distance;
+}
+double EvaluateFitness(vector<int>& tour, vector<vector<int>>& TSP) {
+    int distance = CalculateTourDistance(tour, TSP);
+    double fitness = 1.0 / distance;
+    return fitness;
+}
+vector<vector<int>> select_best_individuals(vector<vector<int>>& population, int count, vector<vector<int>>& TSP) {
+    sort(population.begin(), population.end(), [&](vector<int>& a,vector<int>& b) {
+        return EvaluateFitness(a, TSP) > EvaluateFitness(b, TSP);
+    });
+
+    if (count <= population.size()) {
+        return vector<vector<int>>(population.begin(), population.begin() + count);
+    } else {
+        return population;
+    }
+}
 
 
 
