@@ -6,6 +6,7 @@
 #include <cassert>
 #include <functional>
 #include <unordered_set>
+#include <unordered_map>
 #include <algorithm>
 #include <random>
 #include "utils.h"
@@ -262,24 +263,25 @@ vector<vector<int>> select_best_individuals(vector<vector<int>> &population, int
     }
 }
 
-void CalculateFitness(vector<vector<int>> &population, vector<std::vector<double>> &graph){
-    for (auto &tour : population){
+void CalculateFitness(vector<vector<int>> &population, vector<std::vector<double>> &graph, unordered_map<vector<int>, int, vector_hash>& fitnessMap){
+    for (vector<int>& tour : population) {
         int fitness = EvaluateFitness(tour, graph);
-        // Set the fitness score for the current tour
-        // (Assuming the fitness is stored at the end of the tour vector)
-        tour.push_back(fitness);
+        // Store the fitness in the hashmap with the tour as the key
+        fitnessMap[tour] = fitness;
     }
 }
 
 vector<vector<int>> SelectBestSolution(vector<vector<int>> &population, int count, vector<std::vector<double>> &graph){
+    // Declare an unordered_map to store tour-fitness pairs
+    std::unordered_map<std::vector<int>, int, vector_hash> fitnessMap;
+
     // Calculate fitness for each individual in the population
-    CalculateFitness(population, graph);
+    CalculateFitness(population, graph, fitnessMap);
 
     // Sort the population based on fitness (lower fitness values come first)
-    std::sort(population.begin(), population.end(), [](vector<int> &a, vector<int> &b)
-              {
-                  return a.back() < b.back(); // Assuming fitness is stored at the end of the tour vector
-              });
+    sort(population.begin(), population.end(), [&fitnessMap](vector<int>& a,vector<int>& b){
+        return fitnessMap[a] < fitnessMap[b];
+    });
 
     if (count <= population.size()){
         return std::vector<std::vector<int>>(population.begin(), population.begin() + count);
