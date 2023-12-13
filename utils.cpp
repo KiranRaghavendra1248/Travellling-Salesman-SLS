@@ -10,6 +10,8 @@
 
 using namespace std;
 
+
+
 // Utility classes and struct
 double crossoverRate = 0.7; 
 double mutationRate = 0.1;
@@ -142,57 +144,6 @@ vector<vector<int>> initializePopulation(int N, int numCities){
     vector<vector<int>> generatedPopulation(generatedPopulationSet.begin(), generatedPopulationSet.end());
     return generatedPopulation;
 }
-
-void geneticAlgorithm(vector<vector<int>>& graph, vector<vector<int>>& edges, int startCity, int numCities, int numEdges){
-    int populationSize;
-    vector<int> initialSolution;
-    vector<vector<int>> population, generatedRandomizedPopulation;
-
-    populationSize = 25;
-    // Generate inital solution using Krustal's MST algo
-    initialSolution = kruskalMST(graph, edges, startCity, numCities, numEdges);
-
-    // Initalize population
-    population.push_back(initialSolution);
-    generatedRandomizedPopulation = initializePopulation(populationSize-1,numCities);
-    population.insert(population.end(), generatedRandomizedPopulation.begin(), generatedRandomizedPopulation.end());
-
-    // Print generated populations
-    std::cout << "Populations:" << std::endl;
-    for (const auto& individual : population) {
-        for (int value : individual) {
-            std::cout << value << " ";
-        }
-        std::cout << std::endl;
-    }
-    int generations = 100; 
-    for (int generation = 0; generation < generations; ++generation) {
-        vector<pair<int, int>> selectedParents = selection(population);
-        vector<vector<int>> offspring;
-        for (size_t i = 0; i < selectedParents.size(); ++i) {
-            pair<int, int> parents = selectedParents[i];
-            vector<int>& parent1 = population[parents.first];
-            vector<int>& parent2 = population[parents.second];
-            pair<vector<int>, vector<int>> child = Crossover(parent1, parent2, crossoverRate);
-            Mutation(child.first, mutationRate);
-            Mutation(child.second, mutationRate);
-            offspring.push_back(child.first);
-            offspring.push_back(child.second);
-        }
-
-        population.insert(population.end(), offspring.begin(), offspring.end());
-        population = select_best_individuals(population, populationSize);
-    }
-
-    // Run generation loop:
-    //      In every generation 
-    //      loop for populationSize times: 
-    //          perform selection, mutation and crossover -> generate offspring
-    //      now we have 2*populationSize (half old and half new)
-    //      choose populationSize best individuals from population using tour distance as metric and repeat above loop
-    // Now find the best population amongnst current population
-}
-
 vector<pair<int, int>> selection(vector<vector<int>>& population) {
     vector<pair<int, int>> selectedParents;
 
@@ -210,13 +161,15 @@ int selectParent(vector<vector<int>>& population) {
     return randomIndex;
 }
 
-void Mutation(vector<vector<int>>& offspring, double rate) {
+void Mutation(std::vector<int>& offspring, double rate) {
     int randMax = RAND_MAX + 1;
-    for (auto& tour : offspring) {
+    int tourLength = offspring.size(); // Assuming offspring is a vector of integers representing tours
+
+    for (int i = 0; i < tourLength; ++i) {
         int randomNumber = rand();
         double probability = static_cast<double>(randomNumber) / randMax;
         if (probability < rate) {
-            ApplyMutation(tour);
+            ApplyMutation(offspring);
         }
     }
 }
@@ -268,14 +221,16 @@ int CalculateTourDistance(vector<int>& tour,  vector<vector<int>>& TSP) {
     
     return total_distance;
 }
-double EvaluateFitness(vector<int>& tour, vector<vector<int>>& TSP) {
+
+double EvaluateFitness(vector<int>& tour, vector<std::vector<int>>& TSP) {
     int distance = CalculateTourDistance(tour, TSP);
-    double fitness = 1.0 / distance;
+    cout<<"Distance :"<<distance<<endl;
+    double fitness = (distance > 0) ? (1.0 / distance) : numeric_limits<double>::infinity();
     return fitness;
 }
-vector<vector<int>> select_best_individuals(vector<vector<int>>& population, int count, vector<vector<int>>& TSP) {
-    sort(population.begin(), population.end(), [&](vector<int>& a,vector<int>& b) {
-        return EvaluateFitness(a, TSP) > EvaluateFitness(b, TSP);
+vector<vector<int>> select_best_individuals(vector<vector<int>>& population, int count,vector<vector<int>>& TSP) {
+    sort(population.begin(), population.end(), [&](vector<int>& a, vector<int>& b) {
+        return EvaluateFitness(a, TSP) > EvaluateFitness(b,TSP);
     });
 
     if (count <= population.size()) {
@@ -285,19 +240,88 @@ vector<vector<int>> select_best_individuals(vector<vector<int>>& population, int
     }
 }
 
+void CalculateFitness(vector<vector<int>>& population, vector<std::vector<int>>& TSP) {
+    for (auto& tour : population) {
+        int fitness = EvaluateFitness(tour, TSP);
+        // Set the fitness score for the current tour
+        // (Assuming the fitness is stored at the end of the tour vector)
+        tour.push_back(fitness);
+    }
+}
 
+vector<vector<int>> SelectBestSolution(vector<vector<int>>& population, int count, vector<std::vector<int>>& TSP) {
+    // Calculate fitness for each individual in the population
+    CalculateFitness(population, TSP);
 
+    // Sort the population based on fitness (lower fitness values come first)
+    std::sort(population.begin(), population.end(), [](vector<int>& a, vector<int>& b) {
+        return a.back() < b.back(); // Assuming fitness is stored at the end of the tour vector
+    });
 
+    if (count <= population.size()) {
+        return std::vector<std::vector<int>>(population.begin(), population.begin() + count);
+    } else {
+        return population; // Return the whole population if count exceeds population size
+    }
+}
 
+void geneticAlgorithm(vector<vector<int>>& graph, vector<vector<int>>& edges, int startCity, int numCities, int numEdges,vector<vector<int>>& TSP){
+    int populationSize;
+    vector<int> initialSolution;
+    vector<vector<int>> population, generatedRandomizedPopulation;
 
+    populationSize = 25;
+    // Generate inital solution using Krustal's MST algo
+    initialSolution = kruskalMST(graph, edges, startCity, numCities, numEdges);
 
+    // Initalize population
+    population.push_back(initialSolution);
+    generatedRandomizedPopulation = initializePopulation(populationSize-1,numCities);
+    population.insert(population.end(), generatedRandomizedPopulation.begin(), generatedRandomizedPopulation.end());
 
+    // Print generated populations
+    std::cout << "Populations:" << std::endl;
+    for (const auto& individual : population) {
+        for (int value : individual) {
+            std::cout << value << " ";
+        }
+        std::cout << std::endl;
+    }
+    int count =1;
+    int generations = 100; 
+    for (int generation = 0; generation < generations; ++generation) {
+        vector<pair<int, int>> selectedParents = selection(population);
+        vector<vector<int>> offspring;
+        for (size_t i = 0; i < selectedParents.size(); ++i) {
+            pair<int, int> parents = selectedParents[i];
+            vector<int>& parent1 = population[parents.first];
+            vector<int>& parent2 = population[parents.second];
+            pair<vector<int>, vector<int>> child = Crossover(parent1, parent2, crossoverRate);
+            Mutation(child.first, mutationRate);
+            Mutation(child.second, mutationRate);
+            offspring.push_back(child.first);
+            offspring.push_back(child.second);
+        }
 
-
-
-
-
-
-
-
+        population.insert(population.end(), offspring.begin(), offspring.end());
+        population = select_best_individuals(population, populationSize, TSP);
+    }
+  
+     vector<vector<int>> finalSolution = SelectBestSolution(population, count, TSP);
+   cout << "Final TSP Solution:" << endl;
+for (const auto& tour : finalSolution) {
+    for (int city : tour) {
+        cout << city << " ";
+    }
+    cout << endl;
+}
+    
+    // Run generation loop:
+    //      In every generation 
+    //      loop for populationSize times: 
+    //          perform selection, mutation and crossover -> generate offspring
+    //      now we have 2*populationSize (half old and half new)
+    //      choose populationSize best individuals from population using tour distance as metric and repeat above loop
+    // Now find the best population amongnst current population
+}
 
