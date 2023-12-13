@@ -9,45 +9,36 @@ using namespace std;
 
 #define INF numeric_limits<int>::max()
  
-int main()
+int main(int argc, char* argv[])
 {   
-    int numCities, numEdges, startCity;
+    int numCities, startCity;
 
-    // Read i/p from file
-    ifstream inputFile("input.txt");
-    if (!inputFile.is_open()) {
-        cerr << "Error opening input.txt" << endl;
-        return 1;
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <filename>" << std::endl;
+        return 1; // Exit with an error code
     }
-    inputFile >> numCities >> numEdges;
 
-    assert(numEdges <= numCities*(numCities-1)/2);
+    // Open the file specified in the command-line argument
+    const char* filename = argv[1];
+    ifstream inputFile(filename);
+
+    // Check if the file is successfully opened
+    if (!inputFile) {
+        cerr << "Error: Unable to open file '" << filename << "'" << std::endl;
+        return 1; // Exit with an error code
+    }
+    inputFile >> numCities;
+
 
     // Create a graph represented by an adjacency matrix
-    vector<vector<int>> graph(numCities, vector<int>(numCities, INF));
-    vector<vector<int>> edges;
+    vector<vector<double>> graph(numCities, vector<double>(numCities, INF));
+    vector<vector<double>> edges;
 
-
-    // Initialize diagonal elements to 0 (distance from a city to itself is 0)
-    for (int i = 0; i < numCities; ++i) {
-        graph[i][i] = 0;
-    }
-
-    // Read and process each edge
-    for (int i = 0; i < numEdges; ++i) {
-        int start, end, distance;
-        inputFile >> start >> end >> distance;
-        // add to graph
-        graph[start][end] = distance;
-        graph[end][start] = distance;
-        // add to list of edges
-        edges.push_back({start, end, distance});
-        edges.push_back({end, start, distance});
-    }
-   vector<std::vector<int>> TSP(numCities, vector<int>(numCities, INF));
-    for (int i = 0; i < numCities; ++i) {
-        for (int j = 0; j < numCities; ++j) {
-            TSP[i][j] = graph[i][j];  // Assuming TSP is represented by the graph distances
+    for (double i = 0; i < numCities; i++) {
+        for (double j = 0; j < numCities; j++) {
+            inputFile >> graph[i][j];
+            edges.push_back({i, j, graph[i][j]});
+            edges.push_back({j, i, graph[i][j]});
         }
     }
 
@@ -62,7 +53,7 @@ int main()
     startCity = 0;
 
     // Genetic algorithm
-    geneticAlgorithm(graph, edges, startCity, numCities, numEdges, TSP);
+    geneticAlgorithm(graph, edges, startCity, numCities);
 
     return 0;
 }
