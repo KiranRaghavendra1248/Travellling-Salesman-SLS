@@ -184,10 +184,7 @@ void ApplyMutation(vector<int> &tour){
 
 pair<int, int> RandomTwoDifferentIndices(int size){
     int index1 = (rand() % (size-1)) + 1;
-    int index2;
-    do{
-        index2 = (rand() % (size-1)) + 1;
-    } while (index2 == index1);
+    int index2 = (rand() % (size-1)) + 1;
     return make_pair(index1, index2);
 }
 
@@ -292,9 +289,15 @@ vector<vector<int>> SelectBestSolution(vector<vector<int>> &population, int coun
 }
 
 void geneticAlgorithm(vector<vector<double>> &graph, vector<vector<double>> &edges, int startCity, int numCities){
-    int populationSize;
     vector<int> initialSolution;
     vector<vector<int>> population, generatedRandomizedPopulation;
+
+    // Params
+    int count = 1;
+    int populationSize = 100;
+    int generations = 100;
+    double crossoverRate = 0.4;
+    double mutationRate = 0.2;
 
     // Generate inital solution using Krustal's MST algo
     initialSolution = kruskalMST(graph, edges, startCity, numCities);
@@ -303,13 +306,6 @@ void geneticAlgorithm(vector<vector<double>> &graph, vector<vector<double>> &edg
     population.push_back(initialSolution);
     generatedRandomizedPopulation = initializePopulation(populationSize - 1, numCities);
     population.insert(population.end(), generatedRandomizedPopulation.begin(), generatedRandomizedPopulation.end());
-
-    // Params
-    int count = 1;
-    populationSize = 25;
-    int generations = 25;
-    double crossoverRate = 0.4;
-    double mutationRate = 0.2;
 
     for (int generation = 0; generation < generations; ++generation){
         cout << "Running generation " << generation << endl;
@@ -332,11 +328,12 @@ void geneticAlgorithm(vector<vector<double>> &graph, vector<vector<double>> &edg
 
     vector<vector<int>> finalSolution = SelectBestSolution(population, count, graph);
     cout << "Final Travelling Salesman Solution:" << endl;
-    for (const auto &tour : finalSolution){
+    for (auto &tour : finalSolution){
         for (int city : tour){
             cout << city << " ";
         }
         cout << startCity << " ";
         cout << endl;
+        cout << "Fitness of tour : " << CalculateTourDistance(tour, graph) << endl;
     }
 }
