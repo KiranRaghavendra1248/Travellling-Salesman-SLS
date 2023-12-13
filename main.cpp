@@ -27,6 +27,7 @@ int main()
     vector<vector<int>> graph(numCities, vector<int>(numCities, INF));
     vector<vector<int>> edges;
 
+
     // Initialize diagonal elements to 0 (distance from a city to itself is 0)
     for (int i = 0; i < numCities; ++i) {
         graph[i][i] = 0;
@@ -43,6 +44,12 @@ int main()
         edges.push_back({start, end, distance});
         edges.push_back({end, start, distance});
     }
+   vector<std::vector<int>> TSP(numCities, vector<int>(numCities, INF));
+    for (int i = 0; i < numCities; ++i) {
+        for (int j = 0; j < numCities; ++j) {
+            TSP[i][j] = graph[i][j];  // Assuming TSP is represented by the graph distances
+        }
+    }
 
     // Close the file
     inputFile.close();
@@ -55,7 +62,7 @@ int main()
     startCity = 0;
 
     // Genetic algorithm
-    geneticAlgorithm(graph, edges, startCity, numCities, numEdges);
+    geneticAlgorithm(graph, edges, startCity, numCities, numEdges, TSP);
 
     return 0;
 }
