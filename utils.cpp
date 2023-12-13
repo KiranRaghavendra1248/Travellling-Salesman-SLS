@@ -163,7 +163,7 @@ int selectParent(vector<vector<int>> &population){
     return randomIndex;
 }
 
-void Mutation(std::vector<int> &offspring, double rate){
+void Mutation(vector<int> &offspring, double rate){
     int randMax = RAND_MAX + 1;
     int tourLength = offspring.size(); // Assuming offspring is a vector of integers representing tours
     for (int i = 0; i < tourLength; ++i){
@@ -246,7 +246,7 @@ double CalculateTourDistance(vector<int> &tour, vector<vector<double>> &graph){
     return total_distance;
 }
 
-double EvaluateFitness(vector<int> &tour, vector<std::vector<double>> &graph){
+double EvaluateFitness(vector<int> &tour, vector<vector<double>> &graph){
     double distance = CalculateTourDistance(tour, graph);
     double fitness = (distance > 0) ? (1.0 / distance) : numeric_limits<double>::infinity();
     return fitness;
@@ -254,7 +254,7 @@ double EvaluateFitness(vector<int> &tour, vector<std::vector<double>> &graph){
 
 vector<vector<int>> select_best_individuals(vector<vector<int>> &population, int count, vector<vector<double>> &graph){
     sort(population.begin(), population.end(), [&](vector<int> &a, vector<int> &b)
-         { return EvaluateFitness(a, graph) > EvaluateFitness(b, graph); });
+         {return EvaluateFitness(a, graph) < EvaluateFitness(b, graph); });
     if (count <= population.size()){
         return vector<vector<int>>(population.begin(), population.begin() + count);
     }
@@ -263,7 +263,7 @@ vector<vector<int>> select_best_individuals(vector<vector<int>> &population, int
     }
 }
 
-void CalculateFitness(vector<vector<int>> &population, vector<std::vector<double>> &graph, unordered_map<vector<int>, int, vector_hash>& fitnessMap){
+void CalculateFitness(vector<vector<int>> &population, vector<vector<double>> &graph, unordered_map<vector<int>, int, vector_hash>& fitnessMap){
     for (vector<int>& tour : population) {
         int fitness = EvaluateFitness(tour, graph);
         // Store the fitness in the hashmap with the tour as the key
@@ -271,9 +271,9 @@ void CalculateFitness(vector<vector<int>> &population, vector<std::vector<double
     }
 }
 
-vector<vector<int>> SelectBestSolution(vector<vector<int>> &population, int count, vector<std::vector<double>> &graph){
+vector<vector<int>> SelectBestSolution(vector<vector<int>> &population, int count, vector<vector<double>> &graph){
     // Declare an unordered_map to store tour-fitness pairs
-    std::unordered_map<std::vector<int>, int, vector_hash> fitnessMap;
+    unordered_map<vector<int>, int, vector_hash> fitnessMap;
 
     // Calculate fitness for each individual in the population
     CalculateFitness(population, graph, fitnessMap);
@@ -284,7 +284,7 @@ vector<vector<int>> SelectBestSolution(vector<vector<int>> &population, int coun
     });
 
     if (count <= population.size()){
-        return std::vector<std::vector<int>>(population.begin(), population.begin() + count);
+        return vector<vector<int>>(population.begin(), population.begin() + count);
     }
     else{
         return population; // Return the whole population if count exceeds population size
@@ -336,6 +336,7 @@ void geneticAlgorithm(vector<vector<double>> &graph, vector<vector<double>> &edg
         for (int city : tour){
             cout << city << " ";
         }
+        cout << startCity << " ";
         cout << endl;
     }
 }
