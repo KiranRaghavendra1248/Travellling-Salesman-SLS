@@ -1,68 +1,56 @@
 #include <iostream>
-#include <fstream> 
+#include <fstream>
 #include <vector>
-#include <limits> 
+#include <limits>
 #include <cassert>
-#include <iomanip> 
+#include <iomanip>
 #include "utils.h"
+
 using namespace std;
 
 #define INF numeric_limits<int>::max()
- 
-int main()
-{   
-    int numCities, numEdges, startCity;
 
-    // Read i/p from file
-    ifstream inputFile("input.txt");
-    if (!inputFile.is_open()) {
-        cerr << "Error opening input.txt" << endl;
+int main(int argc, char* argv[]) {
+    int numCities, startCity;
+
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <filename>" << std::endl;
         return 1;
     }
-    inputFile >> numCities >> numEdges;
 
-    assert(numEdges <= numCities*(numCities-1)/2);
+    const char* filename = argv[1];
+    ifstream inputFile(filename);
 
-    // Create a graph represented by an adjacency matrix
-    vector<vector<int>> graph(numCities, vector<int>(numCities, INF));
-    vector<vector<int>> edges;
-
-
-    // Initialize diagonal elements to 0 (distance from a city to itself is 0)
-    for (int i = 0; i < numCities; ++i) {
-        graph[i][i] = 0;
+    if (!inputFile) {
+        cerr << "Error: Unable to open file '" << filename << "'" << std::endl;
+        return 1;
     }
+    inputFile >> numCities;
 
-    // Read and process each edge
-    for (int i = 0; i < numEdges; ++i) {
-        int start, end, distance;
-        inputFile >> start >> end >> distance;
-        // add to graph
-        graph[start][end] = distance;
-        graph[end][start] = distance;
-        // add to list of edges
-        edges.push_back({start, end, distance});
-        edges.push_back({end, start, distance});
-    }
-   vector<std::vector<int>> TSP(numCities, vector<int>(numCities, INF));
-    for (int i = 0; i < numCities; ++i) {
-        for (int j = 0; j < numCities; ++j) {
-            TSP[i][j] = graph[i][j];  // Assuming TSP is represented by the graph distances
+    vector<vector<double>> graph(numCities, vector<double>(numCities, INF));
+    vector<vector<double>> edges;
+
+    for (double i = 0; i < numCities; i++) {
+        for (double j = 0; j < numCities; j++) {
+            inputFile >> graph[i][j];
+            edges.push_back({i, j, graph[i][j]});
+            edges.push_back({j, i, graph[i][j]});
         }
     }
 
-    // Close the file
     inputFile.close();
 
-    // Print the adjacency matrix
     cout << "Adjacency Matrix:" << endl;
     printGraph(graph);
 
-    // Let start_city = 0 by default
     startCity = 0;
+    clock_t start_time = clock();
+    geneticAlgorithm(graph, edges, startCity, numCities);
+    clock_t end_time = clock();
 
-    // Genetic algorithm
-    geneticAlgorithm(graph, edges, startCity, numCities, numEdges, TSP);
+    double t = double(end_time - start_time) / CLOCKS_PER_SEC;
+    cout << "Time Taken : "<< t << " seconds" << endl;
 
+    
     return 0;
 }
