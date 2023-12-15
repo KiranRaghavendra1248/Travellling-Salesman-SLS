@@ -33,7 +33,6 @@ pair<int, int> randomTwoDifferentIndices(int size);
 pair<vector<int>, vector<int>> crossover(vector<int>& parent1, vector<int>& parent2, double rate);
 double evaluateFitness(vector<int>& tour, vector<vector<double>>& graph);
 double calculateTourDistance(vector<int>& tour, vector<vector<double>>& graph);
-void calculateFitness(vector<vector<int>>& population, vector<std::vector<double>>& graph, unordered_map<vector<int>, int, vector_hash>& fitnessMap);
 vector<vector<int>> selectBestIndividuals(vector<vector<int>>& population, int count, vector<vector<double>>& graph);
 
 #endif 

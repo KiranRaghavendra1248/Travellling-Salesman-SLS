@@ -116,15 +116,26 @@ vector<int> generateRandomTour(int numCities) {
     return tour;
 }
 
-vector<vector<int>> initializePopulation(int N, int numCities){
+ vector<vector<int>> initializePopulation(int N, int numCities){
     set<vector<int>, VectorComparator> generatedPopulationSet;
     for (int i = 0; generatedPopulationSet.size() < N; ++i) {
         vector<int> vec = generateRandomTour(numCities);
         generatedPopulationSet.insert(vec);
     }
+    // Generate vector from set
     vector<vector<int>> generatedPopulation(generatedPopulationSet.begin(), generatedPopulationSet.end());
     return generatedPopulation;
 }
+
+/*vector<vector<int>> initializePopulation(int N, int numCities) {
+    cout << "Initializing population" << endl;
+    vector<vector<int>> generatedPopulation;
+    for (int i = 0; i < N; ++i) {
+        vector<int> vec = generateRandomTour(numCities);
+        generatedPopulation.push_back(vec);
+    }
+    return generatedPopulation;
+}*/
 
 vector<pair<int, int>> selection(vector<vector<int>> &population) {
     vector<pair<int, int>> selectedParents;
@@ -152,6 +163,11 @@ void mutation(vector<int> &offspring, double rate) {
         double probability = static_cast<double>(randomNumber) / randMax;
         if (probability < rate) {
             applyMutation(offspring);
+           /* cout << "\nAfter Mutation: ";
+            for (int city : offspring) {
+                cout << city << " ";
+            }
+           cout << endl; */
         }
     }
 }
@@ -172,6 +188,14 @@ pair<vector<int>, vector<int>> crossover(vector<int> &parent1, vector<int> &pare
     if ((rand() % 100) < rate * 100) {
         assert(parent1.size() == parent2.size());
         size_t crossoverPoint = (rand() % (min(parent1.size(), parent2.size()) - 1)) + 1;
+       /* cout << "Parent 1: ";
+        for (int city : parent1) {
+            cout << city << " ";
+        }
+        cout << "\nParent 2: ";
+        for (int city : parent2) {
+            cout << city << " ";
+        }*/
         vector<int> offspring1(parent1.size());
         vector<int> offspring2(parent2.size());
         unordered_set<int> elementsInOffspring1;
@@ -204,11 +228,22 @@ pair<vector<int>, vector<int>> crossover(vector<int> &parent1, vector<int> &pare
                 elementsInOffspring2.insert(element);
             }
         }
+       /* cout << "\nOffspring 1: ";
+        for (int city : offspring1) {
+            cout << city << " ";
+        }
+        cout << "\nOffspring 2: ";
+        for (int city : offspring2) {
+            cout << city << " ";
+        }
+        cout << endl;*/
         return make_pair(offspring1, offspring2);
     } else {
         return make_pair(parent1, parent2);
     }
 }
+
+
 
 double calculateTourDistance(vector<int> &tour, vector<vector<double>> &graph) {
     double total_distance = 0;
@@ -227,13 +262,15 @@ double calculateTourDistance(vector<int> &tour, vector<vector<double>> &graph) {
 
 double evaluateFitness(vector<int> &tour, vector<vector<double>> &graph) {
     double distance = calculateTourDistance(tour, graph);
+    // cout << "Minimum distance of the tour : " << calculateTourDistance(tour, graph) << endl;
     double fitness = (distance > 0) ? (1.0 / distance) : numeric_limits<double>::infinity();
     return fitness;
 }
 
 vector<vector<int>> selectBestIndividuals(vector<vector<int>> &population, int count, vector<vector<double>> &graph) {
     sort(population.begin(), population.end(), [&](vector<int> &a, vector<int> &b) {
-        return evaluateFitness(a, graph) < evaluateFitness(b, graph);
+        //return evaluateFitness(a, graph) < evaluateFitness(b, graph);
+        return calculateTourDistance(a, graph) < calculateTourDistance(b, graph);
     });
     if (count <= population.size()) {
         return vector<vector<int>>(population.begin(), population.begin() + count);
@@ -242,35 +279,22 @@ vector<vector<int>> selectBestIndividuals(vector<vector<int>> &population, int c
     }
 }
 
-void calculateFitness(vector<vector<int>> &population, vector<vector<double>> &graph, unordered_map<vector<int>, int, vector_hash> &fitnessMap) {
-    for (vector<int> &tour : population) {
-        int fitness = evaluateFitness(tour, graph);
-        fitnessMap[tour] = fitness;
-    }
-}
-
-vector<vector<int>> selectBestSolution(vector<vector<int>> &population, int count, vector<vector<double>> &graph) {
-    unordered_map<vector<int>, int, vector_hash> fitnessMap;
-    calculateFitness(population, graph, fitnessMap);
-    sort(population.begin(), population.end(), [&fitnessMap](vector<int> &a, vector<int> &b) {
-        return fitnessMap[a] < fitnessMap[b];
+vector<int> selectBestSolution(vector<vector<int>> &population, vector<vector<double>> &graph) {
+    sort(population.begin(), population.end(), [&](vector<int> &a, vector<int> &b) {
+        return calculateTourDistance(a, graph) < calculateTourDistance(b, graph);
     });
-    if (count <= population.size()) {
-        return vector<vector<int>>(population.begin(), population.begin() + count);
-    } else {
-        return population;
-    }
+    return population.front();
 }
 
 void geneticAlgorithm(vector<vector<double>> &graph, vector<vector<double>> &edges, int startCity, int numCities) {
     vector<int> initialSolution;
     vector<vector<int>> population, generatedRandomizedPopulation;
 
-    int count = 1;
-    int populationSize = 10000;
-    int generations = 1;
-    double crossoverRate = 0.8;
-    double mutationRate = 0.01;
+    int populationSize = 250;
+    
+    int generations = 1000;
+    double crossoverRate = 1;
+    double mutationRate = 0.6;
 
     initialSolution = kruskalMST(graph, edges, startCity, numCities);
 
@@ -279,7 +303,7 @@ void geneticAlgorithm(vector<vector<double>> &graph, vector<vector<double>> &edg
     population.insert(population.end(), generatedRandomizedPopulation.begin(), generatedRandomizedPopulation.end());
 
     for (int generation = 0; generation < generations; ++generation) {
-        cout << "Running generation " << generation << endl;
+         cout << "Running generation " << generation << endl;
         vector<pair<int, int>> selectedParents = selection(population);
         vector<vector<int>> offspring;
         for (size_t i = 0; i < selectedParents.size(); ++i) {
@@ -296,14 +320,14 @@ void geneticAlgorithm(vector<vector<double>> &graph, vector<vector<double>> &edg
         population = selectBestIndividuals(population, populationSize, graph);
     }
 
-    vector<vector<int>> finalSolution = selectBestSolution(population, count, graph);
+    vector<int> finalSolution = selectBestSolution(population, graph);
     cout << "Final Travelling Salesman Solution:" << endl;
     for (auto &tour : finalSolution) {
-        for (int city : tour) {
-            cout << city << " ";
+            cout << tour << " ";
         }
         cout << startCity << " ";
         cout << endl;
-        cout << "Minimum distance of the tour : " << calculateTourDistance(tour, graph) << endl;
+        cout << "Minimum distance of the tour : " << calculateTourDistance(finalSolution, graph) << endl;
+        
     }
-}
+
